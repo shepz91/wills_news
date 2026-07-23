@@ -1,0 +1,161 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ article.title }} | Global News Network</title>
+    <style>
+        :root {
+            --primary: #1e293b;       
+            --accent: #2563eb;        
+            --success: #16a34a;       
+            --warning: #ca8a04;       
+            --background: #f8fafc;    
+            --surface: #ffffff;       
+            --text-main: #0f172a;     
+            --text-muted: #64748b;    
+            --border: #e2e8f0;        
+            --radius: 8px;            
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.2s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent);
+        }
+
+        .article-wrapper {
+            background: var(--surface);
+            padding: 3rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 2.25rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+        }
+
+        .meta-strip {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            border-radius: 50px;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-tenant { background: #dbeafe; color: var(--accent); }
+
+        .article-body {
+            font-size: 1.15rem;
+            color: #334155;
+            white-space: pre-wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.4rem 0.85rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: var(--radius);
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-danger { background: #dc2626; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <div class="nav-links">
+                <h2>NewsApp</h2>
+            </div>
+            <div class="nav-links">
+                <a href="{% url 'home' %}">← Return to Home Feed</a>
+            </div>
+        </div>
+
+        <div class="article-wrapper">
+            <h1>{{ article.title }}</h1>
+            
+            <div class="meta-strip">
+                <div>
+                    Published: <strong>{{ article.created_at|date:"F d, Y" }}</strong> | 
+                    Source: <span class="badge badge-tenant">{% if article.publisher %}{{ article.publisher.name }}{% else %}{{ article.author.username }}{% endif %}</span>
+                </div>
+
+                {% if user.is_authenticated and article.author %}
+                    <div>
+                        <form method="post" action="{% url 'toggle_subscription' article.author.id %}">
+                            {% csrf_token %}
+                            {% if article.author.id in user_subscriptions %}
+                                <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.6rem; font-size: 0.8rem;">Unsubscribe</button>
+                            {% else %}
+                                <button type="submit" class="btn btn-primary" style="padding: 0.4rem 0.6rem; font-size: 0.8rem; background: var(--success, #16a34a);">Subscribe</button>
+                            {% endif %}
+                        </form>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="article-body">
+                {{ article.content }}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

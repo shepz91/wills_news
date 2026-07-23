@@ -1,0 +1,15 @@
+[flake8]
+max-line-length = 119
+exclude =
+    .git,
+    __pycache__,
+    migrations,
+    venv,
+    .venv
+
+per-file-ignores =
+    *apps.py: F811, F401
+    *forms.py: F401
+    *tests.py: E501
+    *api_views.py: F811
+

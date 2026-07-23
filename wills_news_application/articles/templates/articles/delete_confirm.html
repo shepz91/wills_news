@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Delete Article</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; max-width: 500px; margin: 60px auto; padding: 20px; border: 1px solid #ffc0c0; background: #fffcfc; border-radius: 6px; text-align: center; }
+        .btn-delete { background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .btn-cancel { background: #6c757d; color: white; text-decoration: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; display: inline-block; margin-left: 10px; }
+    </style>
+</head>
+<body>
+    <h2 style="color: #dc3545;">Permanently Delete Article?</h2>
+    <p>Are you sure you want to delete <strong>"{{ article.title }}"</strong>? This action cannot be undone.</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn-delete">Yes, Delete Forever</button>
+        <a href="{% url 'home' %}" class="btn-cancel">No, Go Back</a>
+    </form>
+</body>
+</html>

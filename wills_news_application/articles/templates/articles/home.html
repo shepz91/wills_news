@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Global News Network</title>
+    <style>
+        :root {
+            --primary: #1e293b;       
+            --accent: #2563eb;        
+            --success: #16a34a;       
+            --warning: #ca8a04;       
+            --background: #f8fafc;    
+            --surface: #ffffff;       
+            --text-main: #0f172a;     
+            --text-muted: #64748b;    
+            --border: #e2e8f0;        
+            --radius: 8px;            
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        h1, h2, h3 {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        h1 {
+            margin-bottom: 1.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.25rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.2s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent);
+        }
+
+        .user-actions {
+            font-size: 0.95rem;
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            color: var(--accent);
+            cursor: pointer;
+            padding: 0;
+            font-size: 0.95rem;
+            text-decoration: underline;
+            font-family: inherit;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .card-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
+            line-height: 1.3;
+        }
+
+        .card-content {
+            color: var(--text-muted);
+            margin-bottom: 1.25rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            border-radius: 50px;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-approved { background: #dcfce7; color: var(--success); }
+        .badge-pending { background: #fef9c3; color: var(--warning); }
+        .badge-tenant { background: #dbeafe; color: var(--accent); }
+        .badge-publisher { background: #f1f5f9; color: var(--primary); border: 1px solid var(--border); }
+
+        .btn {
+            display: inline-block;
+            padding: 0.4rem 0.85rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: var(--radius);
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { background: #334155; }
+
+        .btn-accent { background: var(--accent); color: #fff; }
+        .btn-accent:hover { background: #1d4ed8; }
+
+        .btn-danger { background: #dc2626; color: #fff; }
+        .btn-danger:hover { background: #b91c1c; }
+
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+</style>
+</head>
+<body>
+    <div class="container">
+        <!-- NAVIGATION LAYER -->
+        <div class="nav">
+            <div class="nav-links">
+                <h2>NewsApp</h2>
+                <a href="{% url 'home' %}">Home Feed</a>
+                {% if user.is_authenticated %}
+                    {% if user.profile.role == 'journalist' or user.is_superuser %}
+                        <a href="{% url 'submit_article' %}">Write an Article</a>
+                        <a href="{% url 'write_newsletter' %}">Write a Newsletter</a>
+                    {% endif %}
+                    {% if user.profile.role == 'editor' or user.is_superuser %}
+                        <a href="{% url 'editor_dashboard' %}">Editor Dashboard Workspace</a>
+                    {% endif %}
+                    {% if user.is_superuser %}
+                        <a href="{% url 'create_publisher' %}">Create Publisher Node</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+            
+            <div class="user-actions">
+                {% if user.is_authenticated %}
+                    <span>
+                        Logged in as: <strong>{{ user.username }}</strong> (
+                        <span class="badge badge-tenant">
+                            {% if user.is_superuser %}Superuser{% elif user.profile %}{{ user.profile.get_role_display }}{% else %}Reader{% endif %}
+                        </span>
+                        {% if not user.is_superuser %}
+                            {% if user.publisher_editors.exists %}
+                                <span class="badge badge-publisher">Network: {{ user.publisher_editors.first.name }}</span>
+                            {% elif user.publisher_journalists.exists %}
+                                <span class="badge badge-publisher">Network: {{ user.publisher_journalists.first.name }}</span>
+                            {% endif %}
+                        {% endif %}
+                        ) | 
+                        <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="logout-btn">Log Out</button>
+                        </form>
+                    </span>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-primary">Log In</a>
+                    <a href="{% url 'register' %}" class="btn btn-accent">Create Account</a>
+                {% endif %}
+            </div>
+            </div>
+
+
+            {% if user_subscriptions %}
+                <h1 style="color: var(--accent); border-left: 4px solid var(--accent); padding-left: 0.75rem;">Your Subscription Feed</h1>
+                <div class="grid" style="margin-bottom: 4rem;">
+                    {% for article in subscribed_articles %}
+                        <div class="card" style="border: 1px solid var(--accent);">
+                            <div>
+                                <div class="card-meta">Published: {{ article.created_at|date:"F d, Y" }} | Source: <span class="badge badge-tenant">{% if article.publisher %}{{ article.publisher.name }}{% else %}{{ article.author.username }}{% endif %}</span></div>
+                                <h3 class="card-title">{{ article.title }}</h3>
+                                <p class="card-content">{{ article.content|truncatewords:25 }}</p>
+                            </div>
+                            <div class="btn-group" style="justify-content: space-between; align-items: center; width: 100%;">
+                                <a href="{% url 'article_detail' article.id %}" class="btn btn-accent">Read Article</a>
+                                {% if article.author %}
+                                    <form method="post" action="{% url 'toggle_subscription' article.author.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="target_type" value="author">
+                                        <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.6rem; font-size: 0.8rem;">Unsubscribe from Writer</button>
+                                    </form>
+                                {% elif article.publisher %}
+                                    <form method="post" action="{% url 'toggle_subscription' article.publisher.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="target_type" value="publisher">
+                                        <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.6rem; font-size: 0.8rem;">Unsubscribe</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                    
+                    {% for newsletter in subscribed_newsletters %}
+                        <div class="card" style="border: 1px solid var(--accent);">
+                            <div>
+                                <div class="card-meta">Compiled: {{ newsletter.created_at|date:"F d, Y" }} | Curator: <span class="badge badge-tenant">{{ newsletter.author.username }}</span></div>
+                                <h3 class="card-title">{{ newsletter.title }}</h3>
+                                <p class="card-content">{{ newsletter.description|default:"No description provided."|truncatewords:20 }}</p>
+                                <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
+                                    <strong>Included Articles:</strong>
+                                    <ul style="list-style-type: none; margin-top: 0.25rem; padding-left: 0.5rem;">
+                                        {% for article in newsletter.articles.all %}<li>• {{ article.title }}</li>{% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+        <h1>Breaking Global Stories</h1>
+        <div class="grid">
+            {% for article in articles %}
+                <div class="card">
+                    <div>
+                        <div class="card-meta">Published: {{ article.created_at|date:"F d, Y" }} | Source: <span class="badge badge-tenant">{% if article.publisher %}{{ article.publisher.name }}{% else %}{{ article.author.username }}{% endif %}</span></div>
+                        <h3 class="card-title">{{ article.title }}</h3>
+                        <p class="card-content">{{ article.content|truncatewords:25 }}</p>
+                    </div>
+                    <div class="btn-group" style="justify-content: space-between; align-items: center; width: 100%;">
+                        <a href="{% url 'article_detail' article.id %}" class="btn btn-accent">Read Article</a>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            {% if user.is_authenticated %}
+                                {% if article.author %}
+                                    <form method="post" action="{% url 'toggle_subscription' article.author.id %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="target_type" value="author">
+                                        {% with check_str="author_"|add:article.author.id|stringformat:"s" %}
+                                            {% if check_str in user_subscriptions %}
+                                                <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.6rem; font-size: 0.8rem;">Unsubscribe from Writer</button>
+                                            {% else %}
+                                                <button type="submit" class="btn btn-primary" style="padding: 0.4rem 0.6rem; font-size: 0.8rem; background: var(--success);">Subscribe to Writer</button>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </form>
+                                {% elif article.publisher %}
+                                    <form method="post" action="{% url 'toggle_subscription' article.publisher.id %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="target_type" value="publisher">
+                                        {% with check_str="pub_"|add:article.publisher.id|stringformat:"s" %}
+                                            {% if check_str in user_subscriptions %}
+                                                <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.6rem; font-size: 0.8rem;">Unsubscribe</button>
+                                            {% else %}
+                                                <button type="submit" class="btn btn-primary" style="padding: 0.4rem 0.6rem; font-size: 0.8rem; background: var(--success);">Subscribe</button>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+                            
+                            {% if user.is_authenticated %}
+                                {% if user.is_superuser or article.publisher and user in article.publisher.editors.all or not article.publisher and user == article.author %}
+                                    <a href="{% url 'edit_article' article.id %}" class="btn btn-primary">Edit</a>
+                                    <a href="{% url 'delete_article' article.id %}" class="btn btn-danger" style="padding: 0.4rem 0.85rem;">Delete</a>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+<h1 style="margin-top: 3rem;">Featured Curated Newsletters</h1>
+<div class="grid">
+    {% for newsletter in newsletters %}
+        <div class="card">
+            <div>
+                <div class="card-meta">Compiled: {{ newsletter.created_at|date:"F d, Y" }} | Curator: <span class="badge badge-tenant">{{ newsletter.author.username }}</span></div>
+                <h3 class="card-title">{{ newsletter.title }}</h3>
+                <p class="card-content">{{ newsletter.description|default:"No description provided."|truncatewords:20 }}</p>
+                <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
+                    <strong>Included Articles:</strong>
+                    <ul style="list-style-type: none; margin-top: 0.25rem; padding-left: 0.5rem;">
+                        {% for article in newsletter.articles.all %}<li style="margin-bottom: 0.25rem;">• {{ article.title }}</li>{% empty %}<li>No articles attached yet.</li>{% endfor %}
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="btn-group" style="margin-top: 1rem; display: flex; gap: 0.5rem; align-items: center; width: 100%;">
+                <a href="{% url 'newsletter_detail' newsletter.id %}" class="btn btn-accent" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">View Digest</a>
+                {% if user.is_authenticated %}
+                    {% if user.is_superuser or user == newsletter.author and user.profile.role == 'journalist' %}
+                        <a href="{% url 'edit_newsletter' newsletter.id %}" class="btn btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">Edit</a>
+                        <a href="{% url 'delete_newsletter' newsletter.id %}" class="btn btn-danger" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">Delete</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    {% empty %}
+        <p style="color: var(--text-muted); grid-column: 1 / -1;">No newsletters have been compiled yet.</p>
+    {% endfor %}
+</div>
+</div>
+</body>
+</html>
+
+
+
+
+
+
+

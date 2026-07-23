@@ -1,0 +1,37 @@
+﻿<h1>Breaking Global Stories</h1>
+<div class="grid" style="margin-bottom: 4rem;">
+    {% for article in articles %}
+        <div class="card">
+            <div>
+                <div class="card-meta">Published: {{ article.created_at|date:"F d, Y" }} | Source: <span class="badge badge-tenant">{% if article.publisher %}{{ article.publisher.name }}{% else %}{{ article.author.username }}{% endif %}</span></div>
+                <h3 class="card-title">{{ article.title }}</h3>
+                <p class="card-content">{{ article.content|truncatewords:25 }}</p>
+            </div>
+            <div class="btn-group" style="justify-content: space-between; align-items: center; width: 100%;">
+                <a href="{% url 'article_detail' article.id %}" class="btn btn-accent">Read Article</a>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    {% if user.is_authenticated %}
+                        {% with target_id=article.author.id|default:article.publisher.id %}
+                            {% if target_id %}
+                                <form method="post" action="{% url 'toggle_subscription' target_id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    {% if target_id|stringformat:"s" in user_subscriptions %}
+                                        <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.6rem; font-size: 0.8rem;">Unsubscribe</button>
+                                    {% else %}
+                                        <button type="submit" class="btn btn-primary" style="padding: 0.4rem 0.6rem; font-size: 0.8rem; background: var(--success);">Subscribe</button>
+                                    {% endif %}
+                                </form>
+                            {% endif %}
+                        {% endwith %}
+                    {% endif %}
+                    {% if user.is_authenticated %}
+                        {% if user.is_superuser or user == article.author %}
+                            <a href="{% url 'edit_article' article.id %}" class="btn btn-primary">Edit</a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+

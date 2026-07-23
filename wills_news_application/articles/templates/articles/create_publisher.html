@@ -1,0 +1,26 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Publisher Network</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; color: #0f172a; padding: 2rem 1rem; }
+        .container { max-width: 500px; margin: 0 auto; background: #ffffff; padding: 2rem; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        h1 { margin-bottom: 1.5rem; font-size: 1.5rem; color: #1e293b; }
+        .btn { display: inline-block; padding: 0.5rem 1rem; font-weight: 600; text-decoration: none; border-radius: 8px; border: none; cursor: pointer; background: #2563eb; color: #fff; }
+        .btn:hover { background: #1d4ed8; }
+        .cancel-link { color: #64748b; text-decoration: none; margin-left: 1rem; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Create a New Publisher Network</h1>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn">Create Publisher</button>
+            <a href="{% url 'home' %}" class="cancel-link">Cancel</a>
+        </form>
+    </div>
+</body>
+</html>

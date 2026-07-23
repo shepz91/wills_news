@@ -1,0 +1,39 @@
+﻿{% if user_subscriptions %}
+    <h1 style="color: var(--accent); border-left: 4px solid var(--accent); padding-left: 0.75rem;">Your Subscription Feed</h1>
+    <div class="grid" style="margin-bottom: 4rem;">
+        {% for article in subscribed_articles %}
+            <div class="card" style="border: 1px solid var(--accent);">
+                <div>
+                    <div class="card-meta">Published: {{ article.created_at|date:"F d, Y" }} | Source: <span class="badge badge-tenant">{% if article.publisher %}{{ article.publisher.name }}{% else %}{{ article.author.username }}{% endif %}</span></div>
+                    <h3 class="card-title">{{ article.title }}</h3>
+                    <p class="card-content">{{ article.content|truncatewords:25 }}</p>
+                </div>
+                <div class="btn-group" style="justify-content: space-between; align-items: center; width: 100%;">
+                    <a href="{% url 'article_detail' article.id %}" class="btn btn-accent">Read Article</a>
+                    {% with target_id=article.author.id|default:article.publisher.id %}
+                        <form method="post" action="{% url 'toggle_subscription' target_id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.6rem; font-size: 0.8rem;">Unsubscribe</button>
+                        </form>
+                    {% endwith %}
+                </div>
+            </div>
+        {% endfor %}
+        
+        {% for newsletter in subscribed_newsletters %}
+            <div class="card" style="border: 1px solid var(--accent);">
+                <div>
+                    <div class="card-meta">Compiled: {{ newsletter.created_at|date:"F d, Y" }} | Curator: <span class="badge badge-tenant">{{ newsletter.author.username }}</span></div>
+                    <h3 class="card-title">{{ newsletter.title }}</h3>
+                    <p class="card-content">{{ newsletter.description|default:"No description provided."|truncatewords:20 }}</p>
+                    <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
+                        <strong>Included Articles:</strong>
+                        <ul style="list-style-type: none; margin-top: 0.25rem; padding-left: 0.5rem;">
+                            {% for article in newsletter.articles.all %}<li>• {{ article.title }}</li>{% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}

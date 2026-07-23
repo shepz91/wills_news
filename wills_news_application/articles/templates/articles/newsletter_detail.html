@@ -1,0 +1,60 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ newsletter.title }} | Newsletter Digest</title>
+    <style>
+        :root {
+            --primary: #1e293b;
+            --accent: #2563eb;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --radius: 8px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--background); color: var(--text-main); line-height: 1.5; padding: 3rem 1rem; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .back-link { display: inline-block; color: var(--text-muted); text-decoration: none; font-size: 0.95rem; margin-bottom: 1.5rem; transition: color 0.2s; }
+        .back-link:hover { color: var(--accent); }
+        .meta-header { border-bottom: 2px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 2.5rem; }
+        h1 { font-size: 2.25rem; color: var(--primary); margin-bottom: 0.5rem; }
+        .meta-text { font-size: 0.9rem; color: var(--text-muted); }
+        .description-box { font-size: 1.1rem; color: #334155; margin-bottom: 3rem; background: var(--surface); padding: 1.5rem; border-left: 4px solid var(--accent); border-radius: 0 var(--radius) var(--radius) 0; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .article-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .article-title { font-size: 1.5rem; color: var(--primary); margin-bottom: 0.75rem; }
+        .article-content { color: #334155; white-space: pre-line; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'home' %}" class="back-link">← Back to Home Feed</a>
+        
+        <div class="meta-header">
+            <h1>{{ newsletter.title }}</h1>
+            <div class="meta-text">
+                Compiled on <strong>{{ newsletter.created_at|date:"F d, Y" }}</strong> by <strong>{{ newsletter.author.username }}</strong>
+            </div>
+        </div>
+
+        {% if newsletter.description %}
+            <div class="description-box">
+                {{ newsletter.description }}
+            </div>
+        {% endif %}
+
+        <h2 style="margin-bottom: 1.5rem; color: var(--primary);">Included Stories</h2>
+        
+        {% for article in articles %}
+            <div class="article-card">
+                <h3 class="article-title">{{ article.title }}</h3>
+                <p class="article-content">{{ article.content }}</p>
+            </div>
+        {% empty %}
+            <p style="color: var(--text-muted); font-style: italic;">No articles are attached to this digest archive.</p>
+        {% endfor %}
+    </div>
+</body>
+</html>
