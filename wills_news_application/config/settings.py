@@ -72,7 +72,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # settings.py
 
-if 'host.docker.internal' in sys.argv or 'test' in sys.argv:
+if os.environ.get('USE_SQLITE') == 'True':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -90,6 +90,7 @@ else:
             'PORT': '3306',
         }
     }
+
 
 
 # Password validation
