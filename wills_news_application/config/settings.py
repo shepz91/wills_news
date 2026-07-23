@@ -72,19 +72,24 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # settings.py
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'wills_news_db',
-        'USER': 'root',
-        'PASSWORD': 'admin',
-        'HOST': 'host.docker.internal',
-        'PORT': '3306',
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
+if 'host.docker.internal' in sys.argv or 'test' in sys.argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',  # Your existing MariaDB settings
+            'NAME': 'your_db_name',
+            'USER': 'your_user',
+            'PASSWORD': 'your_password',
+            'HOST': '127.0.0.1',
+            'PORT': '3306',
+        }
+    }
 
 
 # Password validation
