@@ -20,7 +20,7 @@ SECRET_KEY = 'django-insecure-*%d$^cc)f9sweadqqq4s%v5_v42$&gpm$t)*==q9&n3eb8o)kk
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -78,7 +78,7 @@ DATABASES = {
         'NAME': 'wills_news_db',
         'USER': 'root',
         'PASSWORD': 'admin',
-        'HOST': '127.0.0.1',
+        'HOST': 'host.docker.internal',
         'PORT': '3306',
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
