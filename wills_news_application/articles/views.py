@@ -179,7 +179,7 @@ def submit_article_view(request):
 @login_required
 @user_passes_test(is_editor, login_url='home')
 def editor_dashboard_view(request):
-    """Protected Dashboard showing articles awaiting review.."""
+    """Protected Dashboard showing articles awaiting review."""
 
     if request.user.is_superuser:
         pending_articles = Article.objects.filter(approved=False).order_by('-created_at')
