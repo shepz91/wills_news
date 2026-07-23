@@ -50,7 +50,7 @@ class Article(models.Model):
             )
 
     def save(self, *args, **kwargs):
-        """Runs full validation checks before committing to the database."""
+        """Runs full validation checks before committing an article to the database."""
         if not self.pk or kwargs.get('force_validation', False):
             self.full_clean()
         super().save(*args, **kwargs)
