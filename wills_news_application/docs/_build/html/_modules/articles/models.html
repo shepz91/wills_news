@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>articles.models &#8212; wills_news 1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for articles.models</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.db</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span><span class="p">,</span> <span class="n">Group</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.core.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.db.models.signals</span><span class="w"> </span><span class="kn">import</span> <span class="n">pre_save</span><span class="p">,</span> <span class="n">post_save</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.dispatch</span><span class="w"> </span><span class="kn">import</span> <span class="n">receiver</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.conf</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.core.mail</span><span class="w"> </span><span class="kn">import</span> <span class="n">send_mail</span>
+
+
+<div class="viewcode-block" id="Publisher">
+<a class="viewcode-back" href="../../articles.html#articles.admin.Publisher">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Publisher</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents a news organisaation or network.&quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">journalists</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ManyToManyField</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;publisher_journalists&#39;</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">editors</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ManyToManyField</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;publisher_editors&#39;</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the publisher&#39;s name.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span></div>
+
+
+
+<div class="viewcode-block" id="Article">
+<a class="viewcode-back" href="../../articles.html#articles.admin.Article">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Article</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents a written news story.&quot;&quot;&quot;</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">()</span>
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now_add</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">approved</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">author</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span>
+        <span class="n">User</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;articles&#39;</span><span class="p">,</span>
+        <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+    <span class="n">publisher</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span>
+        <span class="n">Publisher</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;articles&#39;</span><span class="p">,</span>
+        <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+<div class="viewcode-block" id="Article.clean">
+<a class="viewcode-back" href="../../articles.html#articles.admin.Article.clean">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validates that an article belongs to either an author or a publisher.&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">clean</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">author</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span>
+                <span class="s2">&quot;An article cannot have both an individual author &quot;</span>
+                <span class="s2">&quot;(journalist) and a publisher.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">author</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span>
+                <span class="s2">&quot;An article must be associated with either an &quot;</span>
+                <span class="s2">&quot;individual author (journalist) or a publisher.&quot;</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Article.save">
+<a class="viewcode-back" href="../../articles.html#articles.admin.Article.save">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Runs full validation checks before committing an article to the database.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">pk</span> <span class="ow">or</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;force_validation&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">full_clean</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the article title.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span></div>
+
+
+
+<div class="viewcode-block" id="Newsletter">
+<a class="viewcode-back" href="../../articles.html#articles.admin.Newsletter">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Newsletter</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents a collection of articles sent to subscribers.&quot;&quot;&quot;</span>
+
+    <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now_add</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">author</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span>
+        <span class="n">User</span><span class="p">,</span>
+        <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">,</span>
+        <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;newsletters&#39;</span>
+    <span class="p">)</span>
+    <span class="n">articles</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ManyToManyField</span><span class="p">(</span>
+        <span class="n">Article</span><span class="p">,</span>
+        <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;newsletters&#39;</span><span class="p">,</span>
+        <span class="n">blank</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the newsletter title.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span></div>
+
+
+
+<div class="viewcode-block" id="UserProfile">
+<a class="viewcode-back" href="../../articles.html#articles.admin.UserProfile">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UserProfile</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stores extended user information including account roles.&quot;&quot;&quot;</span>
+    <span class="n">ROLE_CHOICES</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s1">&#39;reader&#39;</span><span class="p">,</span> <span class="s1">&#39;Reader&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;journalist&#39;</span><span class="p">,</span> <span class="s1">&#39;Journalist&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;editor&#39;</span><span class="p">,</span> <span class="s1">&#39;Editor&#39;</span><span class="p">),</span>
+    <span class="p">]</span>
+
+    <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">OneToOneField</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;profile&#39;</span><span class="p">)</span>
+    <span class="n">role</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="n">ROLE_CHOICES</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;reader&#39;</span><span class="p">)</span>
+
+    <span class="n">subscribed_publishers</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Publisher</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;subscribed_readers&#39;</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">subscribed_journalists</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ManyToManyField</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;subscribed_readers&#39;</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<div class="viewcode-block" id="UserProfile.clean">
+<a class="viewcode-back" href="../../articles.html#articles.admin.UserProfile.clean">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Performs initial user data checks.&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">clean</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="UserProfile.save">
+<a class="viewcode-back" href="../../articles.html#articles.admin.UserProfile.save">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Saves profile updates and clears subscriptions if a user becomes staff.&quot;&quot;&quot;</span>
+        <span class="n">is_role_changing</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pk</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">orig</span> <span class="o">=</span> <span class="n">UserProfile</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">orig</span><span class="o">.</span><span class="n">role</span> <span class="o">==</span> <span class="s1">&#39;reader&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;journalist&#39;</span><span class="p">,</span> <span class="s1">&#39;editor&#39;</span><span class="p">]:</span>
+                    <span class="n">is_role_changing</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">except</span> <span class="n">UserProfile</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;journalist&#39;</span><span class="p">,</span> <span class="s1">&#39;editor&#39;</span><span class="p">])</span> <span class="ow">or</span> <span class="n">is_role_changing</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">subscribed_publishers</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">subscribed_journalists</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the username combined with their assigned role.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">get_role_display</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="assign_user_to_group">
+<a class="viewcode-back" href="../../articles.html#articles.admin.assign_user_to_group">[docs]</a>
+<span class="nd">@receiver</span><span class="p">(</span><span class="n">post_save</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="n">UserProfile</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">assign_user_to_group</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">created</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Synchronizes auth groups when a profile is saved.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="s1">&#39;_saving_group&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">return</span>
+
+    <span class="n">instance</span><span class="o">.</span><span class="n">_saving_group</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">role_groups</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Reader&#39;</span><span class="p">,</span> <span class="s1">&#39;Journalist&#39;</span><span class="p">,</span> <span class="s1">&#39;Editor&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">group_name</span> <span class="ow">in</span> <span class="n">role_groups</span><span class="p">:</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="n">Group</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">group_name</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">group</span><span class="p">:</span>
+                <span class="n">instance</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">groups</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+
+        <span class="n">group_name</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">role</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span>
+        <span class="n">group</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">Group</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">group_name</span><span class="p">)</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">groups</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">_saving_group</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="create_user_profile_on_signup">
+<a class="viewcode-back" href="../../articles.html#articles.admin.create_user_profile_on_signup">[docs]</a>
+<span class="nd">@receiver</span><span class="p">(</span><span class="n">post_save</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="n">User</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_user_profile_on_signup</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">created</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a basic reader profile automatically when a user joins.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">created</span><span class="p">:</span>
+        <span class="n">UserProfile</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">instance</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="s1">&#39;reader&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="track_approval_change">
+<a class="viewcode-back" href="../../articles.html#articles.admin.track_approval_change">[docs]</a>
+<span class="nd">@receiver</span><span class="p">(</span><span class="n">pre_save</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="n">Article</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">track_approval_change</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Caches an article&#39;s prior approval status before changes are saved.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">instance</span><span class="o">.</span><span class="n">pk</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">previous</span> <span class="o">=</span> <span class="n">Article</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span>
+            <span class="n">instance</span><span class="o">.</span><span class="n">_was_approved</span> <span class="o">=</span> <span class="n">previous</span><span class="o">.</span><span class="n">approved</span>
+        <span class="k">except</span> <span class="n">Article</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+            <span class="n">instance</span><span class="o">.</span><span class="n">_was_approved</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">_was_approved</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="handle_article_approval_actions">
+<a class="viewcode-back" href="../../articles.html#articles.admin.handle_article_approval_actions">[docs]</a>
+<span class="nd">@receiver</span><span class="p">(</span><span class="n">post_save</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="n">Article</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">handle_article_approval_actions</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">created</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Triggers email notification distribution and webhooks upon article approval.&quot;&quot;&quot;</span>
+    <span class="n">was_approved</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="s1">&#39;_was_approved&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">instance</span><span class="o">.</span><span class="n">approved</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">was_approved</span><span class="p">:</span>
+        <span class="n">recipient_emails</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">instance</span><span class="o">.</span><span class="n">publisher</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">profile</span> <span class="ow">in</span> <span class="n">instance</span><span class="o">.</span><span class="n">publisher</span><span class="o">.</span><span class="n">subscribed_readers</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+                <span class="n">recipient_emails</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">profile</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">email</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">instance</span><span class="o">.</span><span class="n">author</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">profile</span> <span class="ow">in</span> <span class="n">instance</span><span class="o">.</span><span class="n">author</span><span class="o">.</span><span class="n">subscribed_readers</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+                <span class="n">recipient_emails</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">profile</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">email</span><span class="p">)</span>
+
+        <span class="n">recipient_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">email</span> <span class="k">for</span> <span class="n">email</span> <span class="ow">in</span> <span class="n">recipient_emails</span> <span class="k">if</span> <span class="n">email</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">recipient_list</span><span class="p">:</span>
+            <span class="n">send_mail</span><span class="p">(</span>
+                <span class="n">subject</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;New Article Approved: </span><span class="si">{</span><span class="n">instance</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Read our latest story!</span><span class="se">\n\n</span><span class="si">{</span><span class="n">instance</span><span class="o">.</span><span class="n">content</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">from_email</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s1">&#39;DEFAULT_FROM_EMAIL&#39;</span><span class="p">,</span> <span class="s1">&#39;news@example.com&#39;</span><span class="p">),</span>
+                <span class="n">recipient_list</span><span class="o">=</span><span class="n">recipient_list</span><span class="p">,</span>
+                <span class="n">fail_silently</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">instance</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">instance</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+                <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">instance</span><span class="o">.</span><span class="n">publisher</span> <span class="k">if</span> <span class="n">instance</span><span class="o">.</span><span class="n">publisher</span> <span class="k">else</span> <span class="n">instance</span><span class="o">.</span><span class="n">author</span><span class="p">),</span>
+                <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;Approved for Distribution&#39;</span>
+            <span class="p">}</span>
+            <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s1">&#39;http://127.0.0&#39;</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">payload</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">RequestException</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+
+
+<div class="viewcode-block" id="Subscription">
+<a class="viewcode-back" href="../../articles.html#articles.admin.Subscription">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Subscription</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span>
+        <span class="n">User</span><span class="p">,</span>
+        <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">,</span>
+        <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;subscriptions&#39;</span>
+    <span class="p">)</span>
+    <span class="n">subscribed_author</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span>
+        <span class="n">User</span><span class="p">,</span>
+        <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">,</span>
+        <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;author_subscribers&#39;</span>
+    <span class="p">)</span>
+    <span class="n">subscribed_publisher_id</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span>
+        <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">blank</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now_add</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">unique_together</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s1">&#39;user&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;subscribed_author&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;subscribed_publisher_id&#39;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span><span class="si">}</span><span class="s2"> subscription node&quot;</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">wills_news</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">wills_news</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Will.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
