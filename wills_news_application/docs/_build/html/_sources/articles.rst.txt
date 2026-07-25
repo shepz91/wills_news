@@ -1,6 +1,11 @@
 articles package
 ================
 
+.. automodule:: articles
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Subpackages
 -----------
 
@@ -88,14 +93,6 @@ articles.views module
 ---------------------
 
 .. automodule:: articles.views
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
----------------
-
-.. automodule:: articles
    :members:
    :show-inheritance:
    :undoc-members:

@@ -1,6 +1,11 @@
 config package
 ==============
 
+.. automodule:: config
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Submodules
 ----------
 
@@ -32,14 +37,6 @@ config.wsgi module
 ------------------
 
 .. automodule:: config.wsgi
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
----------------
-
-.. automodule:: config
    :members:
    :show-inheritance:
    :undoc-members:
